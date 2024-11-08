@@ -1,10 +1,13 @@
 import piso  # Importamos el módulo que contiene la clase Celdas
 import pygame
-import sys
+import random
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+
+from agentes import Agente
+
 
 def draw_trash(x, y, tamCelda):
     """Dibuja un cubo pequeño en gris que representa basura sobre una celda."""
@@ -125,6 +128,54 @@ def draw_chessboard(matriz_celdas, tamCelda):
 
     pygame.display.flip()
 
+def draw_agent(x, y, tamCelda):
+    """Dibuja un cubo que representa al agente sobre una celda."""
+    glColor3f(0.0, 0.0, 1.0)  # Color azul para el agente
+    agent_size = tamCelda / 2  # Tamaño del agente (cubo más grande)
+    agent_x = x + tamCelda / 2 - agent_size / 2
+    agent_y = y + tamCelda / 2 - agent_size / 2
+    agent_z = tamCelda / 5  # Elevado ligeramente sobre la celda
+
+    glBegin(GL_QUADS)
+    # Cara superior del agente
+    glVertex3f(agent_x, agent_y, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z)
+    glVertex3f(agent_x, agent_y + agent_size, agent_z)
+
+    # Cara inferior del agente
+    glVertex3f(agent_x, agent_y, agent_z - agent_size)
+    glVertex3f(agent_x + agent_size, agent_y, agent_z - agent_size)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z - agent_size)
+    glVertex3f(agent_x, agent_y + agent_size, agent_z - agent_size)
+
+    # Lado frontal
+    glVertex3f(agent_x, agent_y, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y, agent_z - agent_size)
+    glVertex3f(agent_x, agent_y, agent_z - agent_size)
+
+    # Lado trasero
+    glVertex3f(agent_x, agent_y + agent_size, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z - agent_size)
+    glVertex3f(agent_x, agent_y + agent_size, agent_z - agent_size)
+
+    # Lado izquierdo
+    glVertex3f(agent_x, agent_y, agent_z)
+    glVertex3f(agent_x, agent_y + agent_size, agent_z)
+    glVertex3f(agent_x, agent_y + agent_size, agent_z - agent_size)
+    glVertex3f(agent_x, agent_y, agent_z - agent_size)
+
+    # Lado derecho
+    glVertex3f(agent_x + agent_size, agent_y, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z)
+    glVertex3f(agent_x + agent_size, agent_y + agent_size, agent_z - agent_size)
+    glVertex3f(agent_x + agent_size, agent_y, agent_z - agent_size)
+
+    glEnd()
+
+
 def main(Options):
     pygame.init()
     global tamCelda 
@@ -148,7 +199,30 @@ def main(Options):
     # Generar basuras aleatorias
     piso.Celdas.generarBasurasAleatorias(matriz_celdas, Options.Basuras)
 
+    agente = Agente(0, 0)  # Posición inicial del agente
+
+    # Generar los agentes
+    def render():
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+        # Dibujar el tablero
+        draw_chessboard(matriz_celdas, tamCelda)
+        
+        # Dibujar basuras
+        for fila in matriz_celdas:
+            for celda in fila:
+                if celda.basura:
+                    draw_trash(celda.posicion[1] * tamCelda, celda.posicion[0] * tamCelda, tamCelda)
+        
+        # Dibujar el agente en su posición actual
+        draw_agent(agente.x * tamCelda, agente.y * tamCelda, tamCelda)
+
+        pygame.display.flip()
+
+    
     running = True
+    movimientos = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Movimientos posibles: derecha, abajo, izquierda, arriba
+    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -156,6 +230,17 @@ def main(Options):
 
         draw_chessboard(matriz_celdas, tamCelda)
         pygame.time.wait(10)
+        
+        # Movimiento aleatorio del agente
+        dx, dy = random.choice(movimientos)
+        agente.x += dx
+        agente.y += dy
+        
+        # Renderizar la escena
+        render()
+        
+        # Añade un delay si es necesario para controlar la velocidad de movimiento
+        pygame.time.delay(1000)  # Espera 100 ms entre movimientos (ajusta según prefieras)
 
     pygame.quit()
 
