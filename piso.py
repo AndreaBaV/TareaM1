@@ -1,3 +1,5 @@
+import random
+
 class Celdas():
     def __init__(self, indice, posicion, agente=False, basura=False):
         self.indice = indice
@@ -50,7 +52,14 @@ class Celdas():
         if Options.CeldaInicial == indice: 
             self.inicial = True
 
-
-
-
-
+    def generarBasurasAleatorias(matriz, cantidad_basuras):
+        M, N = len(matriz), len(matriz[0])
+        posiciones_usadas = set()
+        
+        for _ in range(cantidad_basuras):
+            while True:
+                i, j = random.randint(0, M - 1), random.randint(0, N - 1)
+                if (i, j) not in posiciones_usadas and not matriz[i][j].inicial:
+                    matriz[i][j].basura = True
+                    posiciones_usadas.add((i, j))
+                    break
